@@ -3,11 +3,23 @@ import { aesGcmEncrypt } from "./utils/aes"
 import { uint8ArrayToHex } from "./utils/hex"
 import { Registration, Login } from "../opaque-wasm/opaque_wasm"
 
+// import OpaqueWorker from "worker-loader!./opaque.worker.js"
+import OpaqueWorker from "./opaque.worker"
+
 const serverURL = "http://localhost:8000"
 
 export function getRandomSalt(): string {
   const saltArray = crypto.getRandomValues(new Uint8Array(128))
   return uint8ArrayToHex(saltArray)
+}
+
+export function testWorker() {
+  const worker = new OpaqueWorker() as Worker
+
+  worker.postMessage({})
+  worker.onmessage = event => {
+    console.log(event.data)
+  }
 }
 
 export async function register(username: string, password: string, secret: string) {
