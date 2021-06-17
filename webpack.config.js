@@ -17,7 +17,7 @@ module.exports = {
   target: "web",
   output: {
     path: path.resolve(__dirname, "dist"),
-    publicPath: "dist/",
+    // publicPath: "dist/",
     filename: "valaauth.min.js",
     library: "valaauth"
     // sourceMapFilename: "bundle.map",
