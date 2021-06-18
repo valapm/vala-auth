@@ -1,7 +1,6 @@
 import * as argon2 from "argon2-browser"
 import { aesGcmEncrypt } from "./utils/aes"
 import { uint8ArrayToHex } from "./utils/hex"
-import { Registration, Login } from "../opaque-wasm/opaque_wasm"
 
 import OpaqueWorker from "worker-loader!./opaque.worker.ts"
 // import OpaqueWorker from "./opaque.worker"
@@ -33,19 +32,26 @@ export async function register(username: string, password: string, secret: strin
 
   console.log("posting")
 
-  opaqueWorker.onmessage = async event => {
-    console.log(event.data)
-    if ("registrationRequest" in event.data) {
-      await sendRegistrationRequest(event.data.registrationRequest)
-    } else if ("registrationKey" in event.data) {
-      await finishRegistration(event.data.registrationKey)
-      opaqueWorker.terminate()
-    }
-  }
-
-  opaqueWorker.postMessage({ action: "register", password })
-
   let serverRegistrationKey: number[]
+
+  return new Promise<void>(resolve => {
+    opaqueWorker.onmessage = event => {
+      console.log(event.data)
+      if ("registrationRequest" in event.data) {
+        sendRegistrationRequest(event.data.registrationRequest).then(
+          () => {},
+          err => console.error(err)
+        )
+      } else if ("registrationKey" in event.data) {
+        finishRegistration(event.data.registrationKey).then(
+          () => resolve(),
+          err => console.error(err)
+        )
+      }
+    }
+
+    opaqueWorker.postMessage({ action: "register", password })
+  })
 
   async function sendRegistrationRequest(request: number[]) {
     const payload = { request, username, wallet: encryptedSecret }
@@ -54,8 +60,6 @@ export async function register(username: string, password: string, secret: strin
     const res = await postData(serverURL + "/register", payload)
 
     console.log("Requesting Step 1 success")
-
-    // const { key: serverRegistrationKey }: { key: number[] } = res
 
     serverRegistrationKey = res.key
 
@@ -76,6 +80,61 @@ export async function register(username: string, password: string, secret: strin
 
     console.log("Finishing registration")
     const res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
+
+    console.log("success!")
+    console.log(res2)
+  }
+}
+
+export async function login(username: string, password: string) {
+  let serverLoginKey: number[]
+
+  return new Promise<void>(resolve => {
+    opaqueWorker.onmessage = event => {
+      console.log(event.data)
+      if ("loginRequest" in event.data) {
+        sendLoginRequest(event.data.loginRequest).then(
+          () => {},
+          err => console.error(err)
+        )
+      } else if ("loginKey" in event.data) {
+        finishLogin(event.data.loginKey).then(
+          () => resolve(),
+          err => console.error(err)
+        )
+      }
+    }
+
+    opaqueWorker.postMessage({ action: "login", password })
+  })
+
+  async function sendLoginRequest(request: number[]) {
+    const payload = { request, username }
+
+    // TODO: Encrypt secret and salt somehow before sending?
+    const res = await postData(serverURL + "/login", payload)
+
+    console.log("Requesting Step 1 success")
+
+    serverLoginKey = res.key
+
+    console.log(serverLoginKey)
+
+    // const parsedKey = new Uint8Array(serverRegistrationKey)
+
+    console.log("Getting login key")
+    opaqueWorker.postMessage({ action: "finishLogin", key: serverLoginKey })
+  }
+
+  async function finishLogin(loginKey: number[]) {
+    const loginKeyPath = serverLoginKey.map((n: number) => n.toString(16)).join("")
+
+    const payload2 = {
+      key: Array.from(loginKey)
+    }
+
+    console.log("Finishing login")
+    const res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
 
     console.log("success!")
     console.log(res2)
