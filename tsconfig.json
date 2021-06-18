@@ -15,7 +15,8 @@
     "lib": [
       "dom",
       "es6"
-    ]
+    ],
+    "strict": false,
   },
   "include": ["src"]
 }

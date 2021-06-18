@@ -3,7 +3,7 @@ import { aesGcmEncrypt } from "./utils/aes"
 import { uint8ArrayToHex } from "./utils/hex"
 import { Registration, Login } from "../opaque-wasm/opaque_wasm"
 
-import OpaqueWorker from "worker-loader!./opaque.worker.js"
+import OpaqueWorker from "worker-loader!./opaque.worker.ts"
 // import OpaqueWorker from "./opaque.worker"
 
 const serverURL = "http://localhost:8000"
@@ -13,14 +13,7 @@ export function getRandomSalt(): string {
   return uint8ArrayToHex(saltArray)
 }
 
-const worker = new OpaqueWorker() as Worker
-
-export function testWorker() {
-  worker.postMessage({})
-  worker.onmessage = event => {
-    console.log(event.data)
-  }
-}
+const opaqueWorker = new OpaqueWorker()
 
 export async function register(username: string, password: string, secret: string) {
   console.log("Hashing password...")
@@ -38,39 +31,55 @@ export async function register(username: string, password: string, secret: strin
 
   console.log("Requesting registration")
 
-  const registration = new Registration()
-  const registrationRequest = registration.start(password)
+  console.log("posting")
 
-  const payload = { request: Array.from(registrationRequest), username, wallet: encryptedSecret }
-
-  // TODO: Encrypt secret and salt somehow before sending?
-  const res = await postData(serverURL + "/register", payload)
-
-  console.log("Requesting Step 1 success")
-
-  const { key: serverRegistrationKey }: { key: number[] } = res
-
-  console.log(serverRegistrationKey)
-
-  const parsedKey = new Uint8Array(serverRegistrationKey)
-
-  console.log("Getting registration key")
-
-  const registrationKey = registration.finish(parsedKey)
-
-  console.log("done")
-
-  const registrationKeyPath = serverRegistrationKey.map(n => n.toString(16)).join("")
-
-  const payload2 = {
-    key: Array.from(registrationKey)
+  opaqueWorker.onmessage = async event => {
+    console.log(event.data)
+    if ("registrationRequest" in event.data) {
+      await sendRegistrationRequest(event.data.registrationRequest)
+    } else if ("registrationKey" in event.data) {
+      await finishRegistration(event.data.registrationKey)
+      opaqueWorker.terminate()
+    }
   }
 
-  console.log("Finishing registration")
-  const res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
+  opaqueWorker.postMessage({ action: "register", password })
 
-  console.log("success!")
-  console.log(res2)
+  let serverRegistrationKey: number[]
+
+  async function sendRegistrationRequest(request: number[]) {
+    const payload = { request, username, wallet: encryptedSecret }
+
+    // TODO: Encrypt secret and salt somehow before sending?
+    const res = await postData(serverURL + "/register", payload)
+
+    console.log("Requesting Step 1 success")
+
+    // const { key: serverRegistrationKey }: { key: number[] } = res
+
+    serverRegistrationKey = res.key
+
+    console.log(serverRegistrationKey)
+
+    // const parsedKey = new Uint8Array(serverRegistrationKey)
+
+    console.log("Getting registration key")
+    opaqueWorker.postMessage({ action: "finishRegistration", key: serverRegistrationKey })
+  }
+
+  async function finishRegistration(registrationKey: number[]) {
+    const registrationKeyPath = serverRegistrationKey.map((n: number) => n.toString(16)).join("")
+
+    const payload2 = {
+      key: Array.from(registrationKey)
+    }
+
+    console.log("Finishing registration")
+    const res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
+
+    console.log("success!")
+    console.log(res2)
+  }
 }
 
 // Example POST method implementation:
