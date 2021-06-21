@@ -1,5 +1,5 @@
 import * as argon2 from "argon2-browser"
-import { aesGcmEncrypt } from "./utils/aes"
+import { aesGcmEncrypt, aesGcmDecrypt } from "./utils/aes"
 import { uint8ArrayToHex } from "./utils/hex"
 
 import OpaqueWorker from "worker-loader!./opaque.worker.ts"
@@ -14,7 +14,21 @@ export function getRandomSalt(): string {
 
 const opaqueWorker = new OpaqueWorker()
 
-export async function register(username: string, password: string, secret: string) {
+export async function register(username: string, password: string, secret: string): Promise<boolean> {
+  // TODO: Make sure password is good
+  if (!password) {
+    throw new Error("No password provided")
+  }
+
+  if (!username) {
+    throw new Error("No username provided")
+  }
+
+  // TODO: Make sure that secret is valid seed phrase
+  if (!secret) {
+    throw new Error("No seed phrase provided")
+  }
+
   console.log("Hashing password...")
   const salt = getRandomSalt()
   console.log("Salt:", salt)
@@ -34,7 +48,7 @@ export async function register(username: string, password: string, secret: strin
 
   let serverRegistrationKey: number[]
 
-  return new Promise<void>(resolve => {
+  return new Promise<boolean>(resolve => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("registrationRequest" in event.data) {
@@ -44,7 +58,7 @@ export async function register(username: string, password: string, secret: strin
         )
       } else if ("registrationKey" in event.data) {
         finishRegistration(event.data.registrationKey).then(
-          () => resolve(),
+          () => resolve(true),
           err => console.error(err)
         )
       }
@@ -54,7 +68,7 @@ export async function register(username: string, password: string, secret: strin
   })
 
   async function sendRegistrationRequest(request: number[]) {
-    const payload = { request, username, wallet: encryptedSecret }
+    const payload = { request, username, wallet: encryptedSecret, salt }
 
     // TODO: Encrypt secret and salt somehow before sending?
     const res = await postData(serverURL + "/register", payload)
@@ -89,7 +103,7 @@ export async function register(username: string, password: string, secret: strin
 export async function login(username: string, password: string) {
   let serverLoginKey: number[]
 
-  return new Promise<void>(resolve => {
+  return new Promise<string>(resolve => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("loginRequest" in event.data) {
@@ -99,7 +113,7 @@ export async function login(username: string, password: string) {
         )
       } else if ("loginKey" in event.data) {
         finishLogin(event.data.loginKey).then(
-          () => resolve(),
+          seed => resolve(seed),
           err => console.error(err)
         )
       }
@@ -126,7 +140,7 @@ export async function login(username: string, password: string) {
     opaqueWorker.postMessage({ action: "finishLogin", key: serverLoginKey })
   }
 
-  async function finishLogin(loginKey: number[]) {
+  async function finishLogin(loginKey: number[]): Promise<string> {
     const loginKeyPath = serverLoginKey.map((n: number) => n.toString(16)).join("")
 
     const payload2 = {
@@ -136,8 +150,12 @@ export async function login(username: string, password: string) {
     console.log("Finishing login")
     const res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
 
+    const passwordHash = await argon2.hash({ pass: password, salt: res2.salt })
+
+    const seed = await aesGcmDecrypt(res2.wallet, passwordHash.hashHex)
     console.log("success!")
-    console.log(res2)
+
+    return seed
   }
 }
 
@@ -160,7 +178,8 @@ async function postData(url = "", data = {}) {
 
   if (response.status !== 200) {
     console.error(response.status)
-    console.error(response.json())
+    const json = await response.json()
+    console.error(json)
     throw new Error("Request failed.")
   }
 
