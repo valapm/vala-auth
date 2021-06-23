@@ -52,19 +52,15 @@ export async function register(username: string, password: string, secret: strin
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("registrationRequest" in event.data) {
-        sendRegistrationRequest(event.data.registrationRequest).then(
-          () => {},
-          err => {
-            throw err
-          }
-        )
+        sendRegistrationRequest(event.data.registrationRequest).catch(err => {
+          throw err
+        })
       } else if ("registrationKey" in event.data) {
-        finishRegistration(event.data.registrationKey).then(
-          () => resolve(true),
-          err => {
+        finishRegistration(event.data.registrationKey)
+          .then(() => resolve(true))
+          .catch(err => {
             throw err
-          }
-        )
+          })
       }
     }
 
@@ -111,19 +107,15 @@ export async function login(username: string, password: string) {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("loginRequest" in event.data) {
-        sendLoginRequest(event.data.loginRequest).then(
-          () => {},
-          err => {
-            throw err
-          }
-        )
+        sendLoginRequest(event.data.loginRequest).catch(err => {
+          throw err
+        })
       } else if ("loginKey" in event.data) {
-        finishLogin(event.data.loginKey).then(
-          seed => resolve(seed),
-          err => {
+        finishLogin(event.data.loginKey)
+          .then(seed => resolve(seed))
+          .catch(err => {
             throw err
-          }
-        )
+          })
       }
     }
 
