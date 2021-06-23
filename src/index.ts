@@ -48,18 +48,18 @@ export async function register(username: string, password: string, secret: strin
 
   let serverRegistrationKey: number[]
 
-  return new Promise<boolean>(resolve => {
+  return new Promise<boolean>((resolve, reject) => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("registrationRequest" in event.data) {
         sendRegistrationRequest(event.data.registrationRequest).catch(err => {
-          throw err
+          reject(err)
         })
       } else if ("registrationKey" in event.data) {
         finishRegistration(event.data.registrationKey)
           .then(() => resolve(true))
           .catch(err => {
-            throw err
+            reject(err)
           })
       }
     }
@@ -71,12 +71,7 @@ export async function register(username: string, password: string, secret: strin
     const payload = { request, username, wallet: encryptedSecret, salt }
 
     // TODO: Encrypt secret and salt somehow before sending?
-    let res
-    try {
-      res = await postData(serverURL + "/register", payload)
-    } catch (e) {
-      throw new Error(e)
-    }
+    const res = await postData(serverURL + "/register", payload)
 
     console.log("Requesting Step 1 success")
 
@@ -99,12 +94,7 @@ export async function register(username: string, password: string, secret: strin
 
     console.log("Finishing registration")
 
-    let res2
-    try {
-      res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
-    } catch (e) {
-      throw new Error(e)
-    }
+    const res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
 
     console.log("success!")
     console.log(res2)
@@ -114,18 +104,18 @@ export async function register(username: string, password: string, secret: strin
 export async function login(username: string, password: string) {
   let serverLoginKey: number[]
 
-  return new Promise<string>(resolve => {
+  return new Promise<string>((resolve, reject) => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
       if ("loginRequest" in event.data) {
         sendLoginRequest(event.data.loginRequest).catch(err => {
-          throw err
+          reject(err)
         })
       } else if ("loginKey" in event.data) {
         finishLogin(event.data.loginKey)
           .then(seed => resolve(seed))
           .catch(err => {
-            throw err
+            reject(err)
           })
       }
     }
@@ -137,12 +127,8 @@ export async function login(username: string, password: string) {
     const payload = { request, username }
 
     // TODO: Encrypt secret and salt somehow before sending?
-    let res
-    try {
-      res = await postData(serverURL + "/login", payload)
-    } catch (e) {
-      throw new Error(e)
-    }
+
+    const res = await postData(serverURL + "/login", payload)
 
     console.log("Requesting Step 1 success")
 
@@ -165,12 +151,7 @@ export async function login(username: string, password: string) {
 
     console.log("Finishing login")
 
-    let res2
-    try {
-      res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
-    } catch (e) {
-      throw new Error(e)
-    }
+    const res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
 
     const passwordHash = await argon2.hash({ pass: password, salt: res2.salt })
 
