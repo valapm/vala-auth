@@ -58,7 +58,14 @@ onmessage = event => {
 
     const parsedKey = new Uint8Array(event.data.key)
     console.log("Generating login key")
-    const loginKey = login.finish(parsedKey)
+
+    let loginKey
+    try {
+      loginKey = login.finish(parsedKey)
+    } catch (e) {
+      ctx.postMessage({ error: "Invalid credentials" })
+      return
+    }
 
     ctx.postMessage({ loginKey: Array.from(loginKey) })
   }
