@@ -51,6 +51,11 @@ export async function register(username: string, password: string, secret: strin
   return new Promise<boolean>((resolve, reject) => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
+
+      if ("error" in event.data) {
+        reject(event.data.error)
+      }
+
       if ("registrationRequest" in event.data) {
         sendRegistrationRequest(event.data.registrationRequest).catch(err => {
           reject(err)
@@ -107,6 +112,11 @@ export async function login(username: string, password: string) {
   return new Promise<string>((resolve, reject) => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
+
+      if ("error" in event.data) {
+        reject(event.data.error)
+      }
+
       if ("loginRequest" in event.data) {
         sendLoginRequest(event.data.loginRequest).catch(err => {
           reject(err)
