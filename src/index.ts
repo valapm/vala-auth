@@ -54,12 +54,16 @@ export async function register(username: string, password: string, secret: strin
       if ("registrationRequest" in event.data) {
         sendRegistrationRequest(event.data.registrationRequest).then(
           () => {},
-          err => console.error(err)
+          err => {
+            throw err
+          }
         )
       } else if ("registrationKey" in event.data) {
         finishRegistration(event.data.registrationKey).then(
           () => resolve(true),
-          err => console.error(err)
+          err => {
+            throw err
+          }
         )
       }
     }
@@ -109,12 +113,16 @@ export async function login(username: string, password: string) {
       if ("loginRequest" in event.data) {
         sendLoginRequest(event.data.loginRequest).then(
           () => {},
-          err => console.error(err)
+          err => {
+            throw err
+          }
         )
       } else if ("loginKey" in event.data) {
         finishLogin(event.data.loginKey).then(
           seed => resolve(seed),
-          err => console.error(err)
+          err => {
+            throw err
+          }
         )
       }
     }
@@ -180,7 +188,7 @@ async function postData(url = "", data = {}) {
     console.error(response.status)
     const json = await response.json()
     console.error(json)
-    throw new Error("Request failed.")
+    throw new Error(json.message)
   }
 
   return response.json() // parses JSON response into native JavaScript objects
