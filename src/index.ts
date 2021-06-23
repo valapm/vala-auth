@@ -71,7 +71,12 @@ export async function register(username: string, password: string, secret: strin
     const payload = { request, username, wallet: encryptedSecret, salt }
 
     // TODO: Encrypt secret and salt somehow before sending?
-    const res = await postData(serverURL + "/register", payload)
+    let res
+    try {
+      res = await postData(serverURL + "/register", payload)
+    } catch (e) {
+      throw new Error(e)
+    }
 
     console.log("Requesting Step 1 success")
 
@@ -93,7 +98,13 @@ export async function register(username: string, password: string, secret: strin
     }
 
     console.log("Finishing registration")
-    const res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
+
+    let res2
+    try {
+      res2 = await postData(serverURL + "/register/" + registrationKeyPath, payload2)
+    } catch (e) {
+      throw new Error(e)
+    }
 
     console.log("success!")
     console.log(res2)
@@ -126,7 +137,12 @@ export async function login(username: string, password: string) {
     const payload = { request, username }
 
     // TODO: Encrypt secret and salt somehow before sending?
-    const res = await postData(serverURL + "/login", payload)
+    let res
+    try {
+      res = await postData(serverURL + "/login", payload)
+    } catch (e) {
+      throw new Error(e)
+    }
 
     console.log("Requesting Step 1 success")
 
@@ -148,7 +164,13 @@ export async function login(username: string, password: string) {
     }
 
     console.log("Finishing login")
-    const res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
+
+    let res2
+    try {
+      res2 = await postData(serverURL + "/login/" + loginKeyPath, payload2)
+    } catch (e) {
+      throw new Error(e)
+    }
 
     const passwordHash = await argon2.hash({ pass: password, salt: res2.salt })
 
