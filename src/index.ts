@@ -29,6 +29,10 @@ export async function register(username: string, password: string, secret: strin
     throw new Error("No seed phrase provided")
   }
 
+  if (typeof secret !== "string") {
+    throw new Error("Invalid seed phrase")
+  }
+
   console.log("Hashing password...")
   const salt = getRandomSalt()
   console.log("Salt:", salt)
