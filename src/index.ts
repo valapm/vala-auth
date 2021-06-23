@@ -53,7 +53,7 @@ export async function register(username: string, password: string, secret: strin
       console.log(event.data)
 
       if ("error" in event.data) {
-        reject(event.data.error)
+        reject(new Error(event.data.error))
       }
 
       if ("registrationRequest" in event.data) {
@@ -114,7 +114,7 @@ export async function login(username: string, password: string) {
       console.log(event.data)
 
       if ("error" in event.data) {
-        reject(event.data.error)
+        reject(new Error(event.data.error))
       }
 
       if ("loginRequest" in event.data) {
