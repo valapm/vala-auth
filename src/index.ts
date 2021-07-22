@@ -5,8 +5,6 @@ import { uint8ArrayToHex } from "./utils/hex"
 import OpaqueWorker from "worker-loader!./opaque.worker.ts"
 // import OpaqueWorker from "./opaque.worker"
 
-const serverURL = "http://localhost:8000"
-
 export function getRandomSalt(): string {
   const saltArray = crypto.getRandomValues(new Uint8Array(128))
   return uint8ArrayToHex(saltArray)
@@ -14,7 +12,12 @@ export function getRandomSalt(): string {
 
 const opaqueWorker = new OpaqueWorker()
 
-export async function register(username: string, password: string, secret: string): Promise<boolean> {
+export async function register(
+  username: string,
+  password: string,
+  secret: string,
+  serverURL: string
+): Promise<boolean> {
   // TODO: Make sure password is good
   if (!password) {
     throw new Error("No password provided")
@@ -110,7 +113,7 @@ export async function register(username: string, password: string, secret: strin
   }
 }
 
-export async function login(username: string, password: string) {
+export async function login(username: string, password: string, serverURL: string) {
   let serverLoginKey: number[]
 
   return new Promise<string>((resolve, reject) => {
