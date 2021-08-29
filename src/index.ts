@@ -13,18 +13,19 @@ export function getRandomSalt(): string {
 const opaqueWorker = new OpaqueWorker()
 
 export async function register(
-  username: string,
+  email: string,
   password: string,
   secret: string,
-  serverURL: string
+  serverURL: string,
+  pubKey: string
 ): Promise<boolean> {
   // TODO: Make sure password is good
   if (!password) {
     throw new Error("No password provided")
   }
 
-  if (!username) {
-    throw new Error("No username provided")
+  if (!email) {
+    throw new Error("No email provided")
   }
 
   // TODO: Make sure that secret is valid seed phrase
@@ -80,7 +81,7 @@ export async function register(
   })
 
   async function sendRegistrationRequest(request: number[]) {
-    const payload = { request, username, wallet: encryptedSecret, salt }
+    const payload = { request, email, wallet: encryptedSecret, salt, pubKey }
 
     // TODO: Encrypt secret and salt somehow before sending?
     const res = await postData(serverURL + "/register", payload)
@@ -113,7 +114,7 @@ export async function register(
   }
 }
 
-export async function login(username: string, password: string, serverURL: string) {
+export async function login(email: string, password: string, serverURL: string) {
   let serverLoginKey: number[]
 
   return new Promise<string>((resolve, reject) => {
@@ -141,7 +142,7 @@ export async function login(username: string, password: string, serverURL: strin
   })
 
   async function sendLoginRequest(request: number[]) {
-    const payload = { request, username }
+    const payload = { request, email }
 
     // TODO: Encrypt secret and salt somehow before sending?
 
