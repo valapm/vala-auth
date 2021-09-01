@@ -114,10 +114,12 @@ export async function register(
   }
 }
 
+type loginResult = { seed: string; verified: boolean }
+
 export async function login(email: string, password: string, serverURL: string) {
   let serverLoginKey: number[]
 
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<loginResult>((resolve, reject) => {
     opaqueWorker.onmessage = event => {
       console.log(event.data)
 
@@ -131,7 +133,7 @@ export async function login(email: string, password: string, serverURL: string) 
         })
       } else if ("loginKey" in event.data) {
         finishLogin(event.data.loginKey)
-          .then(seed => resolve(seed))
+          .then(res => resolve(res))
           .catch(err => {
             reject(err)
           })
@@ -160,7 +162,7 @@ export async function login(email: string, password: string, serverURL: string) 
     opaqueWorker.postMessage({ action: "finishLogin", key: serverLoginKey })
   }
 
-  async function finishLogin(loginKey: number[]): Promise<string> {
+  async function finishLogin(loginKey: number[]): Promise<loginResult> {
     const loginKeyPath = serverLoginKey.map((n: number) => n.toString(16)).join("")
 
     const payload2 = {
@@ -176,7 +178,7 @@ export async function login(email: string, password: string, serverURL: string) 
     const seed = await aesGcmDecrypt(res2.wallet, passwordHash.hashHex)
     console.log("success!")
 
-    return seed
+    return { seed, verified: res2.verified }
   }
 }
 
