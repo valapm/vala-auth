@@ -203,7 +203,7 @@ async function postData(url = "", data = {}) {
     console.error(response.status)
     const json = await response.json()
     console.error(json)
-    throw new Error(json.message)
+    throw new Error(json.message || json.error)
   }
 
   return response.json() // parses JSON response into native JavaScript objects
