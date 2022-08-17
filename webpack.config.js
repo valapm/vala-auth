@@ -16,14 +16,11 @@ const VARIANT_BROWSER_PLUGIN = new webpack.DefinePlugin({ VARIANT: JSON.stringif
 const browserMin = {
   mode: "production",
   entry: "./src/index.ts",
-  // devtool: "inline-source-map",
   target: "web",
   output: {
     path: path.resolve(__dirname, "dist"),
-    // publicPath: "dist/",
     filename: "valaauth.min.js",
     library: "valaauth"
-    // sourceMapFilename: "bundle.map",
   },
   module: {
     // Makes WebPack think that we don't need to parse this module,
@@ -73,10 +70,8 @@ const browser = {
   target: "web",
   output: {
     path: path.resolve(__dirname, "dist"),
-    // publicPath: "dist/",
     filename: "valaauth.js",
     library: "valaauth"
-    // sourceMapFilename: "bundle.map",
   },
   module: {
     rules: [
