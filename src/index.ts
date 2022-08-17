@@ -9,15 +9,12 @@ import encodeHex from "@runonbitcoin/nimble/functions/encode-hex"
 import PublicKey from "@runonbitcoin/nimble/classes/public-key"
 import PrivateKey from "@runonbitcoin/nimble/classes/private-key"
 
-import OpaqueWorker from "worker-loader!./opaque.worker.ts"
-// import OpaqueWorker from "./opaque.worker")
+const opaqueWorker = new Worker(new URL("./opaque.worker.ts", import.meta.url))
 
 export function getRandomSalt(): string {
   const saltArray = crypto.getRandomValues(new Uint8Array(128))
   return uint8ArrayToHex(saltArray)
 }
-
-const opaqueWorker = new OpaqueWorker()
 
 // Example POST method implementation:
 async function postData(url = "", data = {}) {
