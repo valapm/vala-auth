@@ -1,4 +1,7 @@
+const webpack = require("webpack")
 const path = require("path")
+
+const VARIANT_BROWSER_PLUGIN = new webpack.DefinePlugin({ VARIANT: JSON.stringify("browser") })
 
 // WebPack has native support for WebAssembly modules, however it's not ideal
 // and in our case it's introducing more issues than it solves.
@@ -10,10 +13,10 @@ const path = require("path")
 // If don't include these hacks and it still compiles successfully,
 // it means that you're using a more modern version of WebPack.
 // I'd be happy if you let me know that it's no longer needed!
-module.exports = {
+const browserMin = {
   mode: "production",
   entry: "./src/index.ts",
-  devtool: "inline-source-map",
+  // devtool: "inline-source-map",
   target: "web",
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -65,5 +68,49 @@ module.exports = {
   },
   experiments: {
     asyncWebAssembly: true
-  }
+  },
+  plugins: [VARIANT_BROWSER_PLUGIN] // Necessary for nimble
 }
+
+const browser = {
+  mode: "production",
+  entry: "./src/index.ts",
+  devtool: "inline-source-map",
+  target: "web",
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    // publicPath: "dist/",
+    filename: "valaauth.js",
+    library: "valaauth"
+    // sourceMapFilename: "bundle.map",
+  },
+  module: {
+    rules: [
+      {
+        test: /\argon2.wasm$/,
+        loader: "base64-loader",
+        type: "javascript/auto"
+      },
+      {
+        test: /\.tsx?$/,
+        use: "ts-loader",
+        exclude: /node_modules/
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".ts", ".js", ".wasm"],
+    fallback: {
+      path: false,
+      fs: false,
+      Buffer: false,
+      process: false
+    }
+  },
+  experiments: {
+    asyncWebAssembly: true
+  },
+  plugins: [VARIANT_BROWSER_PLUGIN] // Necessary for nimble
+}
+
+module.exports = [browser, browserMin]

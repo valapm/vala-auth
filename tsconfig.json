@@ -9,14 +9,14 @@
     // "allowSyntheticDefaultImports" : true,
     "module": "ESNext",
     "target": "es2020",
-    // "moduleResolution": "node",
+    "moduleResolution": "node",
     // "target": "es6",
     // "module": "commonjs",
     "lib": [
       "dom",
       "es6"
     ],
-    "strict": false,
+    "strict": false
   },
   "include": ["src"]
 }
