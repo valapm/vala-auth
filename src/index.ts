@@ -6,6 +6,8 @@ import ecdsaSign from "@runonbitcoin/nimble/functions/ecdsa-sign"
 import decodeHex from "@runonbitcoin/nimble/functions/decode-hex"
 import encodeDER from "@runonbitcoin/nimble/functions/encode-der"
 import encodeHex from "@runonbitcoin/nimble/functions/encode-hex"
+import sha256ripemd160 from "@runonbitcoin/nimble/functions/sha256ripemd160"
+
 import PublicKey from "@runonbitcoin/nimble/classes/public-key"
 import PrivateKey from "@runonbitcoin/nimble/classes/private-key"
 
@@ -166,7 +168,7 @@ export async function register(
 
 type loginResult = { seed: string; verified: boolean }
 
-export async function login(pubKey: string, password: string, serverURL: string) {
+export async function login(pubKeyHashId: string, password: string, serverURL: string) {
   let serverLoginKey: number[]
 
   return new Promise<loginResult>((resolve, reject) => {
@@ -194,7 +196,7 @@ export async function login(pubKey: string, password: string, serverURL: string)
   })
 
   async function sendLoginRequest(request: number[]) {
-    const payload = { request, pubKey }
+    const payload = { request, pubKeyHashId }
 
     // TODO: Encrypt secret and salt somehow before sending?
 
@@ -230,4 +232,9 @@ export async function login(pubKey: string, password: string, serverURL: string)
 
     return { seed, verified: res2.verified }
   }
+}
+
+export function getPubKeyHashId(publicKeyHex: string) {
+  const pubKey = PublicKey.fromString(publicKeyHex)
+  return encodeHex(sha256ripemd160(pubKey.toBuffer()))
 }

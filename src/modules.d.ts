@@ -28,6 +28,12 @@ declare module "@runonbitcoin/nimble/functions/sha256" {
   export default function sha256(data: ByteArray): ByteArray
 }
 
+declare module "@runonbitcoin/nimble/functions/sha256ripemd160" {
+  import { ByteArray } from "@runonbitcoin/nimble"
+
+  export default function sha256ripemd160(data: ByteArray): ByteArray
+}
+
 declare module "@runonbitcoin/nimble/classes/private-key" {
   import { PrivateKey } from "@runonbitcoin/nimble"
 
