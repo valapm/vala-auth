@@ -74,7 +74,7 @@ export async function register(
   try {
     privateKey = PrivateKey.fromString(privKey)
   } catch (e) {
-    throw new Error("Invalid private key hex provided")
+    throw new Error("Invalid private key (WIF) provided")
   }
   const publicKey = PublicKey.fromPrivateKey(privateKey)
 
